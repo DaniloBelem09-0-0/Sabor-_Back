@@ -3,7 +3,8 @@ from django.urls import path, include, re_path
 from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
-from api.views import RegisterView, login_view, test_endpoint
+from api.views.views import RegisterView, login_view, test_endpoint, get_login, logout_view, edit_user, follow_user, unfollow_user
+from api.views.receitas import create_recipe
 
 schema_view = get_schema_view(
     openapi.Info(
@@ -19,12 +20,27 @@ schema_view = get_schema_view(
 )
 
 urlpatterns = [
+    # Admin
     path('admin/', admin.site.urls),
     
-    path('api/auth/login/', login_view, name='login'),  # Corrigido: removido .as_view()
-    path('api/auth/register/', RegisterView.as_view(), name='register'),
-    path('api/test/', test_endpoint, name='test-endpoint'),
+    # Authentication Endpoints
+    path('auth/login/', login_view, name='login'),
+    path('auth/signup/', RegisterView.as_view(), name='register'),
+    path('auth/me/', get_login, name='get_me'),
+    path('auth/logout/', logout_view, name='logout'),
+
+    # Usuário
+    path('users/', edit_user, name='edit_user_logado'),
+    path('users/<id>/follow', follow_user, name='seguir usuários'),
+    path('users/<id>/unfollow', unfollow_user, name='deixar de seguir'),
+
+    # Receitas
+    path('recipes/', create_recipe, name='criar receitas'),
+
+    # Test Endpoint
+    path('test/', test_endpoint, name='test-endpoint'),
     
+    # Documentation
     re_path(r'^swagger(?P<format>\.json|\.yaml)$', 
             schema_view.without_ui(cache_timeout=0), 
             name='schema-json'),

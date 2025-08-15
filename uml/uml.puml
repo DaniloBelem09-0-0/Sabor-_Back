@@ -1,0 +1,145 @@
+@startuml
+
+package "Core" {
+  class Usuario {
+    - id: int <<PK>>
+    - nome: string
+    - email: string <<UNIQUE>>
+    - senha: string <<hash>>
+    - perfil: enum[COMUM,AUTOR,ADMIN,MODERADOR]
+    - uf: string
+    - avatarUrl: string
+    + signup()
+    + login()
+    + updateProfile()
+    + follow()
+    + unfollow()
+  }
+
+  class Receita {
+    - id: int <<PK>>
+    - titulo: string
+    - dificuldade: enum
+    - tempoPreparo: int
+    - usuarioId: int <<FK>>
+    + create()
+    + update()
+    + delete()
+    + search()
+    + listByRegion()
+  }
+}
+
+package "Relacionamentos" {
+  class Seguidor {
+    - id: int <<PK>>
+    - usuarioId: int <<FK>>
+    - seguidorId: int <<FK>>
+  }
+
+  class Favorito {
+    - id: int <<PK>>
+    - usuarioId: int <<FK>>
+    - receitaId: int <<FK>>
+  }
+}
+
+package "Conteúdo" {
+  class Ingrediente {
+    - id: int <<PK>>
+    - nome: string
+    - quantidade: decimal
+    - receitaId: int <<FK>>
+  }
+
+  class PassoPreparo {
+    - id: int <<PK>>
+    - ordem: int
+    - descricao: text
+    - receitaId: int <<FK>>
+  }
+
+  class Comentario {
+    - id: int <<PK>>
+    - texto: text
+    - usuarioId: int <<FK>>
+    - receitaId: int <<FK>>
+  }
+
+  class Avaliacao {
+    - id: int <<PK>>
+    - rating: int (1-5)
+    - usuarioId: int <<FK>>
+    - receitaId: int <<FK>>
+  }
+}
+
+package "Moderação" {
+  class Denuncia {
+    - id: int <<PK>>
+    - motivo: enum
+    - status: enum
+    - usuarioId: int <<FK>>
+    - conteudoId: int <<FK>>
+    - conteudoTipo: enum
+  }
+}
+
+package "Mídia" {
+  class Midia {
+    - id: int <<PK>>
+    - url: string
+    - tipo: enum[IMAGEM,VIDEO]
+    - receitaId: int <<FK>>
+  }
+}
+
+package "Notificações" {
+  class Notificacao {
+    - id: int <<PK>>
+    - tipo: enum
+    - lida: boolean
+    - usuarioId: int <<FK>>
+  }
+}
+
+' Relacionamentos principais
+Usuario "1" --o "0..*" Receita : "publica"
+Usuario "1" --o "0..*" Seguidor : "seguidores"
+Usuario "1" --o "0..*" Favorito : "favoritos"
+Usuario "1" --o "0..*" Comentario : "comenta"
+Usuario "1" --o "0..*" Avaliacao : "avalia"
+
+Receita "1" *-- "1..*" Ingrediente : "contém"
+Receita "1" *-- "1..*" PassoPreparo : "passos"
+Receita "1" --o "0..*" Comentario : "comentários"
+Receita "1" --o "0..*" Avaliacao : "avaliações"
+Receita "1" --o "0..*" Midia : "mídias"
+
+Usuario "1" --o "0..*" Denuncia : "denúncias"
+Usuario "1" --o "0..*" Notificacao : "notificações"
+
+' Legenda de cores
+legend top
+  |<#FFD700> PK | Primary Key |
+  |<#98FB98> FK | Foreign Key |
+  |<#ADD8E6> Enum | Valores pré-definidos |
+endlegend
+
+note bottom of Usuario
+  **Endpoints Principais:**
+  POST /auth/signup
+  POST /auth/login
+  PATCH /users/<id>
+  POST/DELETE /users/<id>/follow
+end note
+
+note right of Receita
+  **Operações CRUD +:**
+  GET /recipes/search
+  GET /recipes/brasil?uf=TO
+  POST/DELETE /ingredients
+  POST/DELETE /steps
+end note
+
+@enduml

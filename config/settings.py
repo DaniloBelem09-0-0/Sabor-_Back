@@ -148,3 +148,5 @@ SWAGGER_SETTINGS = {
     },
     'USE_SESSION_AUTH': False,
 }
+# Correção:
+AUTHENTICATION_BACKENDS = ['django.contrib.auth.backends.ModelBackend']  
