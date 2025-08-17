@@ -1,37 +1,45 @@
 from rest_framework import serializers
-from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
+from .models import User, Recipe  # Import your custom User model
+
 
 # Serializer para registro de usuário
 class UserRegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
+    username = serializers.CharField(required=True)  # obrigatório
 
     class Meta:
         model = User
-        fields = ('id', 'username', 'email', 'password')
+        fields = ('id', 'username', 'email', 'password', 'profile', 'state', 'avatar_url')
+        extra_kwargs = {
+            'profile': {'required': False, 'default': 'COMUM'},
+            'state': {'required': False},
+            'avatar_url': {'required': False}
+        }
 
     def create(self, validated_data):
-        # Cria o usuário com a senha já hash
-        user = User.objects.create_user(
+        return User.objects.create_user(
             username=validated_data['username'],
-            email=validated_data.get('email', ''),
-            password=validated_data['password']
+            email=validated_data['email'],
+            password=validated_data['password'],
+            profile=validated_data.get('profile', 'COMUM'),
+            state=validated_data.get('state', ''),
+            avatar_url=validated_data.get('avatar_url', '')
         )
-        return user
 
 
 class UserLoginSerializer(serializers.Serializer):
-    username = serializers.CharField()
+    email = serializers.EmailField()
     password = serializers.CharField(write_only=True)
 
     def validate(self, data):
-        username = data.get('username')
+        email = data.get('email')
         password = data.get('password')
 
-        if not username or not password:
-            raise serializers.ValidationError("Forneça username e password.")
+        if not email or not password:
+            raise serializers.ValidationError("Forneça email e password.")
 
-        user = authenticate(username=username, password=password)
+        user = authenticate(email=email, password=password)
         if not user:
             raise serializers.ValidationError("Credenciais inválidas.")
         if not user.is_active:
@@ -45,21 +53,21 @@ class UserLoginSerializer(serializers.Serializer):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ('id', 'username', 'email')
+        fields = ('id', 'email', 'profile', 'state', 'avatar_url', 'following', 'followers')
+        read_only_fields = ('id', 'following', 'followers')
+
 
 class UserSerializerEdit(serializers.ModelSerializer):
-    username = serializers.CharField(required=False)
     email = serializers.EmailField(required=False)
 
     class Meta:
         model = User
-        fields = ['username', 'email']
-
-    def validate_username(self, value):
-        user = self.instance
-        if User.objects.exclude(pk=user.pk).filter(username=value).exists():
-            raise serializers.ValidationError("Este username já está em uso.")
-        return value
+        fields = ['email', 'profile', 'state', 'avatar_url']
+        extra_kwargs = {
+            'profile': {'required': False},
+            'state': {'required': False},
+            'avatar_url': {'required': False}
+        }
 
     def validate_email(self, value):
         user = self.instance
@@ -67,12 +75,24 @@ class UserSerializerEdit(serializers.ModelSerializer):
             raise serializers.ValidationError("Este email já está em uso.")
         return value
 
-# serializers de recietas
-from rest_framework import serializers
-from .models import Recipe
 
+# Serializers de receitas
 class RecipeSerializer(serializers.ModelSerializer):
+    user = serializers.PrimaryKeyRelatedField(read_only=True)  # Changed from 'author' to 'user'
+    ingredients = serializers.StringRelatedField(many=True, read_only=True)
+    preparation_steps = serializers.StringRelatedField(many=True, read_only=True)
+
     class Meta:
         model = Recipe
-        fields = ['id', 'author', 'title', 'description', 'ingredients', 'instructions', 'created_at']
-        read_only_fields = ['id', 'author', 'created_at']
+        fields = ['id', 'user', 'title', 'difficulty', 'prep_time',
+                  'ingredients', 'preparation_steps', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'user', 'created_at', 'updated_at']
+
+
+class RecipeDetailSerializer(serializers.ModelSerializer):
+    user = UserSerializer(read_only=True)
+
+    class Meta:
+        model = Recipe
+        fields = '__all__'
+        read_only_fields = ['id', 'user', 'created_at', 'updated_at']
