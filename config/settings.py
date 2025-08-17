@@ -40,7 +40,8 @@ INSTALLED_APPS = [
     'rest_framework',
     'api',
     'rest_framework.authtoken',
-     'drf_yasg',
+    'drf_yasg',
+    'django_seed',
 ]
 
 MIDDLEWARE = [

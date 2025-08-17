@@ -45,8 +45,7 @@ def create_recipe(request):
 )
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
-def search_recipe(request, id):
-    print("caiuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu")
+def search_recipe_byId(request, id):
     try:
         # Busca a receita pelo ID
         print("id", id)
@@ -59,4 +58,41 @@ def search_recipe(request, id):
 
     # Serializa o objeto antes de retornar
     serializer = RecipeSerializer(target_recipe)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@swagger_auto_schema(
+    method='get',
+    operation_description="Busca receitas com filtros opcionais",
+    manual_parameters=[
+        openapi.Parameter('title', openapi.IN_QUERY, description="Filtrar por título", type=openapi.TYPE_STRING),
+        openapi.Parameter('difficulty', openapi.IN_QUERY, description="Filtrar por dificuldade", type=openapi.TYPE_STRING),
+        openapi.Parameter('prep_time', openapi.IN_QUERY, description="Filtrar por tempo de preparo máximo (em minutos)", type=openapi.TYPE_INTEGER),
+    ],
+    responses={
+        200: openapi.Response('Receitas encontradas com sucesso', schema=RecipeSerializer(many=True)),
+        404: 'Nenhuma receita encontrada'
+    }
+)
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def search_recipe(request):
+    user = request.user
+    queryset = Recipe.objects.filter(author=user)  # Só receitas do usuário logado
+
+    title = request.query_params.get('title')
+    difficulty = request.query_params.get('difficulty')
+    prep_time = request.query_params.get('prep_time')
+
+    if title:
+        queryset = queryset.filter(title__icontains=title)
+    if difficulty:
+        queryset = queryset.filter(difficulty=difficulty)
+    if prep_time:
+        queryset = queryset.filter(prep_time__lte=prep_time)
+
+    if not queryset.exists():
+        return Response({'error': 'Nenhuma receita encontrada'}, status=status.HTTP_404_NOT_FOUND)
+
+    serializer = RecipeSerializer(queryset, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)

@@ -4,7 +4,7 @@ from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 from api.views.views import RegisterView, login_view, test_endpoint, get_login, logout_view, edit_user, follow_user, unfollow_user
-from api.views.receitas import create_recipe, search_recipe
+from api.views.receitas import create_recipe, search_recipe, search_recipe_byId
 
 schema_view = get_schema_view(
     openapi.Info(
@@ -36,7 +36,8 @@ urlpatterns = [
 
     # Receitas
     path('recipes/', create_recipe, name='criar receitas'),
-    path('recipes/<id>', search_recipe, name='Busca uma receitas'),
+    path('recipes/<id>', search_recipe_byId, name='Busca uma receita pelo id'),
+    path('recipes/all/', search_recipe, name='Buscar receitas'),
 
 
     # Test Endpoint
