@@ -68,6 +68,7 @@ def search_recipe_byId(request, id):
         openapi.Parameter('title', openapi.IN_QUERY, description="Filtrar por título", type=openapi.TYPE_STRING),
         openapi.Parameter('difficulty', openapi.IN_QUERY, description="Filtrar por dificuldade", type=openapi.TYPE_STRING),
         openapi.Parameter('prep_time', openapi.IN_QUERY, description="Filtrar por tempo de preparo máximo (em minutos)", type=openapi.TYPE_INTEGER),
+        openapi.Parameter('state', openapi.IN_QUERY, description="Estado da receita", type=openapi.TYPE_STRING),
     ],
     responses={
         200: openapi.Response('Receitas encontradas com sucesso', schema=RecipeSerializer(many=True)),
@@ -77,12 +78,12 @@ def search_recipe_byId(request, id):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def search_recipe(request):
-    user = request.user
-    queryset = Recipe.objects.filter(author=user)  # Só receitas do usuário logado
+    queryset = Recipe.objects.all() 
 
     title = request.query_params.get('title')
     difficulty = request.query_params.get('difficulty')
     prep_time = request.query_params.get('prep_time')
+    state = request.query_params.get('state')  # corrigido
 
     if title:
         queryset = queryset.filter(title__icontains=title)
@@ -90,9 +91,35 @@ def search_recipe(request):
         queryset = queryset.filter(difficulty=difficulty)
     if prep_time:
         queryset = queryset.filter(prep_time__lte=prep_time)
+    if state:
+        queryset = queryset.filter(state__iexact=state)  # corrigido
 
     if not queryset.exists():
         return Response({'error': 'Nenhuma receita encontrada'}, status=status.HTTP_404_NOT_FOUND)
 
     serializer = RecipeSerializer(queryset, many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+
+@swagger_auto_schema(
+    method='get',
+    operation_description="Busca uma receita de forma aleatória",
+    responses={
+        200: openapi.Response('Receita encontrada com sucesso', schema=RecipeSerializer()),
+        404: 'Nenhuma receita encontrada'
+    }
+)
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def receipe_random(request):
+    queryset = Recipe.objects.all() 
+
+    if not queryset.exists():
+        return Response({'error': 'Nenhuma receita encontrada'}, status=status.HTTP_404_NOT_FOUND)
+
+    # Seleciona 1 receita aleatória
+    recipe = queryset.order_by("?").first()
+
+    serializer = RecipeSerializer(recipe)
     return Response(serializer.data, status=status.HTTP_200_OK)

@@ -4,6 +4,37 @@ from django.utils.translation import gettext_lazy as _
 from django.contrib.auth.models import AbstractUser
 from django.contrib.auth import get_user_model
 
+
+class State(models.TextChoices):
+    AC = 'AC', _('Acre')
+    AL = 'AL', _('Alagoas')
+    AP = 'AP', _('Amapá')
+    AM = 'AM', _('Amazonas')
+    BA = 'BA', _('Bahia')
+    CE = 'CE', _('Ceará')
+    DF = 'DF', _('Distrito Federal')
+    ES = 'ES', _('Espírito Santo')
+    GO = 'GO', _('Goiás')
+    MA = 'MA', _('Maranhão')
+    MT = 'MT', _('Mato Grosso')
+    MS = 'MS', _('Mato Grosso do Sul')
+    MG = 'MG', _('Minas Gerais')
+    PA = 'PA', _('Pará')
+    PB = 'PB', _('Paraíba')
+    PR = 'PR', _('Paraná')
+    PE = 'PE', _('Pernambuco')
+    PI = 'PI', _('Piauí')
+    RJ = 'RJ', _('Rio de Janeiro')
+    RN = 'RN', _('Rio Grande do Norte')
+    RS = 'RS', _('Rio Grande do Sul')
+    RO = 'RO', _('Rondônia')
+    RR = 'RR', _('Roraima')
+    SC = 'SC', _('Santa Catarina')
+    SP = 'SP', _('São Paulo')
+    SE = 'SE', _('Sergipe')
+    TO = 'TO', _('Tocantins')
+
+
 class User(AbstractUser):
     email = models.EmailField(_('email address'), unique=True)
     profile = models.CharField(
@@ -15,10 +46,14 @@ class User(AbstractUser):
         ],
         default='COMUM'
     )
-    state = models.CharField(_('UF'), max_length=2, blank=True)
+    state = models.CharField(
+        _('UF'),
+        max_length=2,
+        choices=State.choices,
+        blank=True
+    )
     avatar_url = models.URLField(_('URL do Avatar'), blank=True)
 
-    # Evita conflitos de related_name
     groups = models.ManyToManyField(
         'auth.Group',
         related_name='custom_user_set',
@@ -41,40 +76,19 @@ class User(AbstractUser):
         return self.username
 
 
-
 class Recipe(models.Model):
-    """
-    Model for culinary recipes.
-    """
-
     class Difficulty(models.TextChoices):
         EASY = 'FACIL', _('Fácil')
         MEDIUM = 'MEDIO', _('Médio')
         HARD = 'DIFICIL', _('Difícil')
 
     author = models.ForeignKey(get_user_model(), on_delete=models.CASCADE)
-
-    title = models.CharField(
-        _('título'),
-        max_length=255
-    )
-    difficulty = models.CharField(
-        _('dificuldade'),
-        max_length=7,
-        choices=Difficulty.choices
-    )
-    prep_time = models.PositiveIntegerField(
-        _('tempo de preparo'),
-        help_text=_("Tempo em minutos")
-    )
-    created_at = models.DateTimeField(
-        _('criado em'),
-        auto_now_add=True
-    )
-    updated_at = models.DateTimeField(
-        _('atualizado em'),
-        auto_now=True
-    )
+    title = models.CharField(_('título'), max_length=255)
+    difficulty = models.CharField(_('dificuldade'), max_length=7, choices=Difficulty.choices)
+    prep_time = models.PositiveIntegerField(_('tempo de preparo'), help_text=_("Tempo em minutos"))
+    state = models.CharField(_('UF'), max_length=2, choices=State.choices, blank=True)
+    created_at = models.DateTimeField(_('criado em'), auto_now_add=True)
+    updated_at = models.DateTimeField(_('atualizado em'), auto_now=True)
 
     class Meta:
         verbose_name = _('receita')
@@ -83,6 +97,8 @@ class Recipe(models.Model):
 
     def __str__(self):
         return self.title
+
+
 
 
 class Ingredient(models.Model):

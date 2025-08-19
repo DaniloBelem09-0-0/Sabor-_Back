@@ -76,23 +76,27 @@ class UserSerializerEdit(serializers.ModelSerializer):
         return value
 
 
-# Serializers de receitas
+# serializers.py
 class RecipeSerializer(serializers.ModelSerializer):
-    user = serializers.PrimaryKeyRelatedField(read_only=True)  # Changed from 'author' to 'user'
+    author = serializers.PrimaryKeyRelatedField(read_only=True)
     ingredients = serializers.StringRelatedField(many=True, read_only=True)
-    preparation_steps = serializers.StringRelatedField(many=True, read_only=True)
+    steps = serializers.StringRelatedField(many=True, read_only=True)  # 👈 mudou de preparation_steps para steps
 
     class Meta:
         model = Recipe
-        fields = ['id', 'user', 'title', 'difficulty', 'prep_time',
-                  'ingredients', 'preparation_steps', 'created_at', 'updated_at']
-        read_only_fields = ['id', 'user', 'created_at', 'updated_at']
+        fields = [
+            'id', 'author', 'title', 'difficulty', 'prep_time',
+            'ingredients', 'steps', 'state', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['id', 'author', 'created_at', 'updated_at']
 
 
 class RecipeDetailSerializer(serializers.ModelSerializer):
-    user = UserSerializer(read_only=True)
+    author = UserSerializer(read_only=True)
+    ingredients = serializers.StringRelatedField(many=True, read_only=True)
+    steps = serializers.StringRelatedField(many=True, read_only=True)
 
     class Meta:
         model = Recipe
         fields = '__all__'
-        read_only_fields = ['id', 'user', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'author', 'created_at', 'updated_at']
