@@ -112,7 +112,7 @@ def search_recipe(request):
 )
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def receipe_random(request):
+def random_recipe(request):
     queryset = Recipe.objects.all() 
 
     if not queryset.exists():
@@ -123,3 +123,84 @@ def receipe_random(request):
 
     serializer = RecipeSerializer(recipe)
     return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@swagger_auto_schema(
+    method='delete',
+    operation_description="Deleta uma receita do usuário logado pelo id",
+    responses={
+        204: openapi.Response('Receita deletada com sucesso', schema=RecipeSerializer()),
+        404: 'Nenhuma receita encontrada'
+    }
+)
+@api_view(['DELETE'])
+@permission_classes([permissions.IsAuthenticated])
+def delete_recipe(request, id):
+    try:
+        target_recipe = Recipe.objects.get(id=id)
+        if(target_recipe.author != request.user):
+            return Response(
+                    {"detail": "Você não tem permissão para deletar esta receita."},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+        target_recipe.delete()
+        return Response(
+            {"detail": "Receita deletada com sucesso."},
+            status=status.HTTP_204_NO_CONTENT
+            )
+    except Recipe.DoesNotExist:
+        return Response(
+            {"detail": "Receita não encontrada."},
+            status=status.HTTP_404_NOT_FOUND
+        )
+
+
+@swagger_auto_schema(
+    method='patch',
+    operation_description="Atualiza parcialmente uma receita (somente o autor pode editar).",
+    request_body=RecipeSerializer,
+    
+    manual_parameters=[
+        openapi.Parameter(
+            'id',
+            openapi.IN_PATH,
+            description="ID da receita",
+            type=openapi.TYPE_INTEGER,
+            required=True
+        ),
+        openapi.Parameter('title', openapi.IN_QUERY, description="Filtrar por título", type=openapi.TYPE_STRING),
+        openapi.Parameter('difficulty', openapi.IN_QUERY, description="Filtrar por dificuldade", type=openapi.TYPE_STRING),
+        openapi.Parameter('prep_time', openapi.IN_QUERY, description="Filtrar por tempo de preparo máximo (em minutos)", type=openapi.TYPE_INTEGER),
+        openapi.Parameter('state', openapi.IN_QUERY, description="Estado da receita", type=openapi.TYPE_STRING),
+    ],
+    responses={
+        200: RecipeSerializer,
+        403: "Sem permissão",
+        404: "Receita não encontrada",
+        400: "Dados inválidos"
+    }
+)
+@api_view(['PATCH'])
+@permission_classes([permissions.IsAuthenticated])
+def patch_recipe(request, id):
+    try:
+        target_recipe = Recipe.objects.get(pk=id)
+
+        if target_recipe.author != request.user:
+            return Response(
+                {"detail": "Você não tem acesso a essa receita"},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        serializer = RecipeSerializer(target_recipe, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    except Recipe.DoesNotExist:
+        return Response(
+            {"detail": "Receita não encontrada"},
+            status=status.HTTP_404_NOT_FOUND
+        )

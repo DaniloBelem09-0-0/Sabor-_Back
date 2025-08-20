@@ -4,7 +4,7 @@ from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 from api.views.views import RegisterView, login_view, test_endpoint, get_login, logout_view, edit_user, follow_user, unfollow_user
-from api.views.receitas import create_recipe, search_recipe, search_recipe_byId, receipe_random
+from api.views.receitas import create_recipe, search_recipe, search_recipe_byId, random_recipe, delete_recipe, patch_recipe
 
 schema_view = get_schema_view(
     openapi.Info(
@@ -38,7 +38,9 @@ urlpatterns = [
     path('recipes/', search_recipe, name='buscar_receitas'),               # GET → lista/filtra
     path('recipes/<int:id>/', search_recipe_byId, name='buscar_receita_id'),  # GET → por id
     path('recipes/create/', create_recipe, name='criar_receita'),             # POST → criar
-    path('recipes/random/', receipe_random, name='receita_aleatoria'),        # GET → aleatória
+    path('recipes/random/', random_recipe, name='receita_aleatoria'),        # GET → aleatória
+    path('recipes/<id>', delete_recipe, name='Usuário criador da receita pode deletar uma das suas receitas'),
+    path('recipes/edite/<id>', patch_recipe, name='Usuário pode editar uma de suas receitas'),
 
 
 
