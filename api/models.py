@@ -36,6 +36,14 @@ class State(models.TextChoices):
 
 
 class User(AbstractUser):
+
+    following = models.ManyToManyField(
+        'self',
+        symmetrical=False,
+        related_name='followers',
+        blank=True
+    )
+    
     email = models.EmailField(_('email address'), unique=True)
     profile = models.CharField(
         max_length=10,

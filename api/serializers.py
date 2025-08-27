@@ -1,7 +1,9 @@
 from rest_framework import serializers
 from django.contrib.auth import authenticate
-from .models import User, Recipe  # Import your custom User model
+from .models import User, Recipe  
+from .models import Ingredient
 
+from .models import PreparationStep
 
 # Serializer para registro de usuário
 class UserRegisterSerializer(serializers.ModelSerializer):
@@ -100,3 +102,42 @@ class RecipeDetailSerializer(serializers.ModelSerializer):
         model = Recipe
         fields = '__all__'
         read_only_fields = ['id', 'author', 'created_at', 'updated_at']
+
+
+# Para criar/editar ingrediente
+class IngredientSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Ingredient
+        fields = ['id', 'name', 'quantity', 'measure_unit']
+        read_only_fields = ['id']
+        
+
+# Para exibir ingrediente com recipe apenas como ID
+class IngredientListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Ingredient
+        fields = ['id', 'name', 'quantity', 'measure_unit', 'recipe']
+
+
+# Para detalhar ingrediente junto com receita (se quiser trazer dados da receita)
+class IngredientDetailSerializer(serializers.ModelSerializer):
+    recipe = serializers.StringRelatedField(read_only=True)  
+
+    class Meta:
+        model = Ingredient
+        fields = ['id', 'name', 'quantity', 'measure_unit', 'recipe']
+
+
+class PreparationStepSerializer(serializers.ModelSerializer):
+    # Exibir a receita apenas pelo ID
+    recipe = serializers.PrimaryKeyRelatedField(queryset=Recipe.objects.all())
+
+    class Meta:
+        model = PreparationStep
+        fields = ['id', 'order', 'description', 'recipe']
+        read_only_fields = ['id']
+
+    def validate_order(self, value):
+        if value <= 0:
+            raise serializers.ValidationError("A ordem do passo deve ser maior que zero.")
+        return value

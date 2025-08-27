@@ -3,13 +3,15 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
-from api.serializers import RecipeSerializer
+from api.serializers import RecipeSerializer, IngredientSerializer, PreparationStepSerializer
 
 from rest_framework import generics, permissions, status
 
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
-from api.models import Recipe
+from api.models import Recipe, PreparationStep
+
+from django.shortcuts import get_object_or_404
 
 @swagger_auto_schema(
     method='post',
@@ -204,3 +206,116 @@ def patch_recipe(request, id):
             {"detail": "Receita não encontrada"},
             status=status.HTTP_404_NOT_FOUND
         )
+
+
+
+@swagger_auto_schema(
+    method='get',
+    operation_description="Retorna todos os ingredientes de uma receita pelo ID",
+    manual_parameters=[
+        openapi.Parameter(
+            'id',
+            openapi.IN_PATH,
+            description="ID da receita",
+            type=openapi.TYPE_INTEGER,
+            required=True
+        )
+    ],
+    responses={
+        200: openapi.Response(
+            description="Lista de ingredientes",
+            schema=IngredientSerializer(many=True)
+        ),
+        404: "Receita não encontrada",
+        500: "Erro interno"
+    }
+)
+@api_view(['GET'])
+@permission_classes([permissions.AllowAny])
+def get_ingredients_by_recipe_id(request, id):
+    try:
+        recipe = Recipe.objects.filter(id=id).first()
+        if not recipe:
+            return Response(
+                {'error': 'Receita não encontrada.'}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        ingredients = Ingredient.objects.filter(recipe=recipe)
+        serializer = IngredientSerializer(ingredients, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        return Response(
+            {'error': 'Ocorreu um erro ao buscar ingredientes.', 'details': str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+
+@swagger_auto_schema(
+    method='post',
+    operation_description="Cria passos de preparo para uma receita do usuário logado",
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        required=['steps'],
+        properties={
+            'steps': openapi.Schema(
+                type=openapi.TYPE_ARRAY,
+                items=openapi.Items(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'order': openapi.Schema(type=openapi.TYPE_INTEGER, description='Ordem do passo'),
+                        'description': openapi.Schema(type=openapi.TYPE_STRING, description='Descrição do passo')
+                    }
+                )
+            )
+        }
+    ),
+    responses={
+        201: 'Passos criados com sucesso',
+        400: 'Dados inválidos',
+        403: 'Usuário não é o autor da receita',
+        404: 'Receita não encontrada'
+    }
+)
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def create_steps(request, id):
+    steps_data = request.data.get('steps')
+
+    if not isinstance(steps_data, list) or not steps_data:
+        return Response(
+            {'detail': 'O campo "steps" deve ser uma lista não vazia.'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    # só pega receitas do usuário logado
+    recipe = get_object_or_404(Recipe, id=id, author=request.user)
+
+    serializer = PreparationStepSerializer(
+        data=[{**step, 'recipe': recipe.id} for step in steps_data],
+        many=True
+    )
+    serializer.is_valid(raise_exception=True)
+    serializer.save()
+
+    return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+@swagger_auto_schema(
+    method='delete',
+    operation_description="Remove um passo de uma receita do usuário logado",
+    responses={
+        204: 'Passo deletado com sucesso',
+        403: 'Usuário não é o autor da receita',
+        404: 'Receita ou passo não encontrado'
+    }
+)
+@api_view(['DELETE'])
+@permission_classes([permissions.IsAuthenticated])
+def delete_step(request, id_recipe, id_step):
+    recipe = get_object_or_404(Recipe, id=id_recipe, user=request.user)
+    step = get_object_or_404(PreparationStep, id=id_step, recipe=recipe)
+
+    step.delete()
+    return Response(status=status.HTTP_204_NO_CONTENT)

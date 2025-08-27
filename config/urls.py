@@ -4,7 +4,8 @@ from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 from api.views.views import RegisterView, login_view, test_endpoint, get_login, logout_view, edit_user, follow_user, unfollow_user
-from api.views.receitas import create_recipe, search_recipe, search_recipe_byId, random_recipe, delete_recipe, patch_recipe
+from api.views.receitas import create_recipe, search_recipe, search_recipe_byId, random_recipe, delete_recipe, patch_recipe, create_steps, get_ingredients_by_recipe_id, delete_step
+from api.views.ingredients import create_ingredient, delete_ingredient
 
 schema_view = get_schema_view(
     openapi.Info(
@@ -20,34 +21,32 @@ schema_view = get_schema_view(
 )
 
 urlpatterns = [
-    # Admin
     path('admin/', admin.site.urls),
-    
-    # Authentication Endpoints
+
     path('auth/login/', login_view, name='login'),
     path('auth/signup/', RegisterView.as_view(), name='register'),
     path('auth/me/', get_login, name='get_me'),
     path('auth/logout/', logout_view, name='logout'),
 
-    # Usuário
     path('users/', edit_user, name='edit_user_logado'),
     path('users/<id>/follow', follow_user, name='seguir usuários'),
     path('users/<id>/unfollow', unfollow_user, name='deixar de seguir'),
 
-    # Receitas
     path('recipes/', search_recipe, name='buscar_receitas'),               # GET → lista/filtra
     path('recipes/<int:id>/', search_recipe_byId, name='buscar_receita_id'),  # GET → por id
     path('recipes/create/', create_recipe, name='criar_receita'),             # POST → criar
     path('recipes/random/', random_recipe, name='receita_aleatoria'),        # GET → aleatória
     path('recipes/<id>', delete_recipe, name='Usuário criador da receita pode deletar uma das suas receitas'),
     path('recipes/edite/<id>', patch_recipe, name='Usuário pode editar uma de suas receitas'),
+    path('recipes/<id>/steps/', create_steps, name="create-steps"),
+    path('recipes/<id_recipe>/steps/<id_step>', delete_step, name='delete-step'),
 
-
-
-    # Test Endpoint
+    path('ingredients/<id_recipe>', create_ingredient, name='create-ingredient'),      # POST → criar ingrediente
+    path('ingredients/<int:id>/', delete_ingredient, name='delete-ingredient'), 
+    path('ingredients/recipe/<id>', get_ingredients_by_recipe_id, name='get-recipe-by-id'),
+    
     path('test/', test_endpoint, name='test-endpoint'),
     
-    # Documentation
     re_path(r'^swagger(?P<format>\.json|\.yaml)$', 
             schema_view.without_ui(cache_timeout=0), 
             name='schema-json'),
