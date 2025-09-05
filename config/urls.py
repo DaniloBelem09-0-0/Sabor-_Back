@@ -6,6 +6,7 @@ from drf_yasg import openapi
 from api.views.views import RegisterView, login_view, test_endpoint, get_login, logout_view, edit_user, follow_user, unfollow_user
 from api.views.receitas import create_recipe, search_recipe, search_recipe_byId, random_recipe, delete_recipe, patch_recipe, create_steps, get_ingredients_by_recipe_id, delete_step
 from api.views.ingredients import create_ingredient, delete_ingredient
+from api.views.comments import get_list_comments_byId, create_comment_byId, delete_comment_byId, rating_recipe_byId, get_rating_recipe_byId
 
 schema_view = get_schema_view(
     openapi.Info(
@@ -45,8 +46,16 @@ urlpatterns = [
     path('ingredients/<int:id>/', delete_ingredient, name='delete-ingredient'), 
     path('ingredients/recipe/<id>', get_ingredients_by_recipe_id, name='get-recipe-by-id'),
     
+    path('comments/recipe/<int:id>', get_list_comments_byId, name='get the list of a recipe' ),
+    path('comments/recipe/<int:id>/create', create_comment_byId, name='create a comment at one recipe'),
     path('test/', test_endpoint, name='test-endpoint'),
-    
+    path('comments/<int:id>', delete_comment_byId, name='delete comment by id'),
+
+    path('rattings/recipes/<int:id>', rating_recipe_byId, name='Ratting recipe by id'),
+    path('rattings/recipes/<int:id>/avaliation', get_rating_recipe_byId, name='Ratting recipe by id'),
+
+    path('favorite/recipes/<int:id>', favorite_recipe_byId, name='Favorite recipe by id'),
+
     re_path(r'^swagger(?P<format>\.json|\.yaml)$', 
             schema_view.without_ui(cache_timeout=0), 
             name='schema-json'),

@@ -1,9 +1,11 @@
 from rest_framework import serializers
 from django.contrib.auth import authenticate
-from .models import User, Recipe  
-from .models import Ingredient
+from .models import User, Recipe, Comment, Ingredient
 
 from .models import PreparationStep
+
+from rest_framework import serializers
+from api.models import Rating
 
 # Serializer para registro de usuário
 class UserRegisterSerializer(serializers.ModelSerializer):
@@ -141,3 +143,18 @@ class PreparationStepSerializer(serializers.ModelSerializer):
         if value <= 0:
             raise serializers.ValidationError("A ordem do passo deve ser maior que zero.")
         return value
+
+
+class CommentSerializer(serializers.ModelSerializer):
+    user = serializers.StringRelatedField()
+
+    class Meta:
+        model = Comment
+        fields = ['id', 'text', 'user', 'created_at']
+
+
+class RatingSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Rating
+        fields = ['id', 'rating', 'user', 'recipe']
+        read_only_fields = ['id', 'user', 'recipe']

@@ -194,7 +194,7 @@ class IngredientAPITest(APITestCase):
         self.client.force_authenticate(user=self.user)
     
     def test_create_ingredient(self):
-        url = reverse("create-ingredient")  
+        url = reverse("create-ingredient", kwargs={"id_recipe": self.recipe.id})  
         data = {
             "name": "Salt",
             "quantity": "1.00",

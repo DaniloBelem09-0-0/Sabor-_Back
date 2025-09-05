@@ -316,6 +316,19 @@ def create_steps(request, id):
 def delete_step(request, id_recipe, id_step):
     recipe = get_object_or_404(Recipe, id=id_recipe, user=request.user)
     step = get_object_or_404(PreparationStep, id=id_step, recipe=recipe)
-
+    
     step.delete()
     return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@api_view(['DELETE'])
+@permission_classes([permissions.IsAuthenticated])
+def favorite_recipe_byId(request, id): 
+    try: 
+        recipe = get_object_or_404(Recipe, id=id_recipe, user=request.user)
+        user = request.user
+       
+        
+        
+        
+        
