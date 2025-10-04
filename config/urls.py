@@ -4,7 +4,7 @@ from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 from api.views.views import RegisterView, login_view, test_endpoint, get_login, logout_view, edit_user, follow_user, unfollow_user
-from api.views.receitas import create_recipe, search_recipe, search_recipe_byId, random_recipe, delete_recipe, patch_recipe, create_steps, get_ingredients_by_recipe_id, delete_step
+from api.views.receitas import create_recipe, search_recipe, search_recipe_byId, favorite_recipe_byId, random_recipe, delete_recipe, patch_recipe, create_steps, get_ingredients_by_recipe_id, delete_step
 from api.views.ingredients import create_ingredient, delete_ingredient
 from api.views.comments import get_list_comments_byId, create_comment_byId, delete_comment_byId, rating_recipe_byId, get_rating_recipe_byId
 

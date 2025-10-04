@@ -107,8 +107,6 @@ class Recipe(models.Model):
         return self.title
 
 
-
-
 class Ingredient(models.Model):
     """
     Model for recipe ingredients.

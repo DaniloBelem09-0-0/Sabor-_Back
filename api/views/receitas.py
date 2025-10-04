@@ -1,4 +1,6 @@
 # views.py
+from sqlite3 import IntegrityError
+
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -9,7 +11,7 @@ from rest_framework import generics, permissions, status
 
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
-from api.models import Recipe, PreparationStep
+from api.models import Recipe, PreparationStep, Ingredient, Favorite
 
 from django.shortcuts import get_object_or_404
 
@@ -316,17 +318,54 @@ def create_steps(request, id):
 def delete_step(request, id_recipe, id_step):
     recipe = get_object_or_404(Recipe, id=id_recipe, user=request.user)
     step = get_object_or_404(PreparationStep, id=id_step, recipe=recipe)
-    
     step.delete()
     return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-@api_view(['DELETE'])
+@swagger_auto_schema(
+    method='post',
+    operation_description="Adiciona uma receita à lista de favoritas do usuário logado",
+    manual_parameters=[
+        openapi.Parameter(
+            'id',
+            openapi.IN_PATH,
+            description="ID da receita a ser adicionada aos favoritos",
+            type=openapi.TYPE_INTEGER,
+            required=True
+        )
+    ],
+    responses={
+        204: "Receita adicionada com sucesso aos favoritos",
+        404: "Receita não encontrada ou erro ao adicionar",
+        403: "Usuário não autenticado"
+    }
+)
+@api_view(['POST'])
 @permission_classes([permissions.IsAuthenticated])
 def favorite_recipe_byId(request, id): 
-    try: 
-        recipe = get_object_or_404(Recipe, id=id_recipe, user=request.user)
-        user = request.user
+    recipe = Recipe.objects.get(pk=id)
+    user = request.user
+
+    try:
+        ## Adiciona na lista de receitas favoritas do usuário que realizou a requisição
+        favorite, created = Favorite.objects.get_or_create(user=user, recipe=recipe)
+        if not created:
+            return Response(
+                {"detail": "Receita já está na lista de favoritas."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        return Response(status=status.HTTP_201_CREATED)
+    except Exception as e:
+        return Response(
+            {"detail": f"Erro ao adicionar a receita: {str(e)}"},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+    except IntegrityError:
+        return Response(
+            {"detail": "Erro ao adicionar uma receita a lista de receitas favoritas do usuário logado."},
+            status=status.HTTP_404_NOT_FOUND
+        )
+
        
         
         
