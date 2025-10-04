@@ -36,7 +36,6 @@ class State(models.TextChoices):
 
 
 class User(AbstractUser):
-
     following = models.ManyToManyField(
         'self',
         symmetrical=False,
